@@ -16,8 +16,9 @@ SQUASHED_FS ?= casper/ubuntu-server-minimal.squashfs
 VARIANT ?= default
 
 # The project and package version of the kernel packages
-KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-devtools-image/install
-DTB=imx8mm-verdin-wifi-dahlia-moducop-cpu01.dtb
+KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-edgefarm-devtools-image/install
+#DTB=imx8mm-verdin-wifi-dahlia-moducop-cpu01.dtb
+DTB=imx8mm-verdin-wifi-moducop-cpu01.dtb
 
 # The BSP version to write into /etc/bsp.version
 BSP_VERSION ?= local-build

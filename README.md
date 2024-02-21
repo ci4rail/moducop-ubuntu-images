@@ -12,12 +12,12 @@ $ make
 - [x] ModemManager
 - [x] SIM7906E Modem
 - [x] Wifi
-- [ ] GPS
+- [x] GPS
 - [ ] Io4Edge Tools 
-- [ ] Io4Edge Devices (Networkmanager config, dhcpd, udev rules)
+- [ ] Io4Edge Devices (Networkmanager config, dhcpd, udev rules) udev rules ok -> use dnsmasq
 - [ ] TTYNVT and -runner
 - [ ] SocketCAN Io4Edge and -runner
-- [ ] Docker with Compose
+- [x] Docker with Compose
 - [ ] Alsa
 - [ ] SDCard Automount
 - [ ] Ignition Watcher

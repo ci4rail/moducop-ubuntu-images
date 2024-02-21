@@ -29,9 +29,14 @@ apt -y --no-install-recommends install \
     net-tools iputils-ping netcat \
     nano \
     dnsmasq-base \
-    wireless-regdb
-    
-#fuse-overlayfs
+    wireless-regdb \
+    fuse-overlayfs
+
+
+# The docker installer uses iptables for nat. Unfortunately Debian uses nftables. 
+# Setup Debian to use the legacy iptables.
+update-alternatives --set iptables /usr/sbin/iptables-legacy
+update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
 # WIFI Chipset firmware
 # The kernel 5.6.x driver still uses the old name, provide a symlink for older kernels
@@ -92,3 +97,58 @@ sed -i 's/pam_unix.so obscure yescrypt/pam_unix.so obscure sha512/' /etc/pam.d/c
 # change root password
 echo "root:ci" | chpasswd
 
+# USB io4edge devices udev rules
+echo 'ACTION=="add", ATTRS{interface}=="TinyUSB Network", PROGRAM="/usr/bin/usb_io4edge_interface_name.sh %k", NAME="%c"' > /etc/udev/rules.d/99-usb-io4edge.rules
+
+cat <<EOF > /usr/bin/usb_io4edge_interface_name.sh 
+#!/bin/sh
+
+USB_PATH=$(readlink /sys/class/net/$1)
+
+USB_PORT=$(echo $USB_PATH | awk -F/ '{print$(NF-3)}')
+
+case $USB_PORT in
+
+  1-1.4.1)
+    echo "usb_ext1"
+    ;;
+
+  1-1.4.2)
+    echo "usb_ext2"
+    ;;
+
+  1-1.4.4)
+    echo "usb_ext3"
+    ;;
+
+  1-1.4.3)
+    echo "usb_ext4"
+    ;;
+
+  1-1.3.1)
+    echo "usb_ext5"
+    ;;
+
+  1-1.3.3)
+    echo "usb_ext6"
+    ;;
+
+  1-1.3.2)
+    echo "usb_ext7"
+    ;;
+
+  1-1.3.4)
+    echo "usb_ext8"
+    ;;
+
+  1-1.2.1)
+    echo "usb_io_ctrl"
+    ;;
+
+  *)
+    echo "unknown"
+    ;;
+
+esac
+EOF
+chmod +x /usr/bin/usb_io4edge_interface_name.sh
