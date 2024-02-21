@@ -1,19 +1,17 @@
 Use a docker container to build the rootfs.
 
-docker run -it -v`pwd`:/work -v`pwd`/../yocto-images-dunfell:/yocto-images  ubuntu:22.04
+$ ./startdev.sh
 
-# Inside docker shell
-cd /work
-./install_tools.sh
-make 
+# Inside the container
+$ make
 
 
 # TODO
 
 - [x] NetworkManager
 - [x] ModemManager
-- [ ] SIM7906E Modem
-- [ ] Wifi
+- [x] SIM7906E Modem
+- [x] Wifi
 - [ ] GPS
 - [ ] Io4Edge Tools 
 - [ ] Io4Edge Devices (Networkmanager config, dhcpd, udev rules)
@@ -35,3 +33,9 @@ OTA
 
 Build
 - [ ] Use kernel artifacts from gh packages
+
+## Boot via nfs
+
+setenv autoload no; dhcp; setenv serverip 192.168.24.70; tftp $fdt_addr_r moducop/boot/imx8mm-verdin-wifi-moducop-cpu01.dtb; tftp $kernel_addr_r moducop/boot/Image; setenv bootargs root=/dev/nfs $console nfsroot=$serverip:/srv/fs/moducop,tcp,v3 rw ip=$ipaddr:$serverip:$gatewayip:$netmask:$hostname:$netdev:none ; booti $kernel_addr_r - $fdt_addr_r
+
+

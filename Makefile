@@ -16,8 +16,8 @@ SQUASHED_FS ?= casper/ubuntu-server-minimal.squashfs
 VARIANT ?= default
 
 # The project and package version of the kernel packages
-KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-edgefarm-devtools-image/install
-#KERNEL_PACKAGES_VERSION ?= 1.0.0
+KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-devtools-image/install
+DTB=imx8mm-verdin-wifi-dahlia-moducop-cpu01.dtb
 
 # The BSP version to write into /etc/bsp.version
 BSP_VERSION ?= local-build
@@ -68,13 +68,13 @@ ${BUILD_DIR}/.postinst.done: ${VARIANT}_postinst.sh
 	@touch $@
 
 # Install kernel, dtb and modules
-${ROOTFS_DIR}/boot/Image: ${ROOTFS_DIR} 
+${ROOTFS_DIR}/boot/Image: ${ROOTFS_DIR} ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/Image.gz ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/${DTB} ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/modules-moducop-cpu01.tgz
 	@echo "=== Installing Kernel Image/DTB and modules ==="
 	gunzip -c ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/Image.gz > ${ROOTFS_DIR}/boot/Image
 	tar -C ${ROOTFS_DIR}/usr -xzf ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/modules-moducop-cpu01.tgz
 	@cp depmod.sh ${ROOTFS_DIR}/root && chmod +x ${ROOTFS_DIR}/root/depmod.sh
 	@chroot ${ROOTFS_DIR} /root/depmod.sh
-	cp -L ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/imx8mm-verdin-wifi-moducop-cpu01.dtb ${ROOTFS_DIR}/boot/
+	cp -L ${KERNEL_PACKAGES_PATH}/images/moducop-cpu01/${DTB} ${ROOTFS_DIR}/boot/imx8mm-verdin-wifi-moducop-cpu01.dtb
 
 # create BSP version file
 ${ROOTFS_DIR}/etc/bsp.version:

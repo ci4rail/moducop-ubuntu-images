@@ -24,8 +24,18 @@ apt -y --no-install-recommends install \
     network-manager \
     modemmanager \
     logrotate \
-    gpsd \
+    gpsd gpsd-tools  \
     docker-ce docker-ce-cli containerd.io docker-compose-plugin \
+    net-tools iputils-ping netcat \
+    nano \
+    dnsmasq-base \
+    wireless-regdb
+    
+#fuse-overlayfs
+
+# WIFI Chipset firmware
+# The kernel 5.6.x driver still uses the old name, provide a symlink for older kernels
+(cd /usr/lib/firmware && ln -fs sdsd8997_combo_v4.bin sd8997_uapsta.bin)
 
 # We don't want unattended upgrades
 apt -y remove unattended-upgrades
