@@ -30,7 +30,8 @@ apt -y --no-install-recommends install \
     nano \
     dnsmasq-base \
     wireless-regdb \
-    fuse-overlayfs
+    fuse-overlayfs \
+    avahi-daemon avahi-utils \
 
 
 # The docker installer uses iptables for nat. Unfortunately Debian uses nftables. 
@@ -97,17 +98,24 @@ sed -i 's/pam_unix.so obscure yescrypt/pam_unix.so obscure sha512/' /etc/pam.d/c
 # change root password
 echo "root:ci" | chpasswd
 
+#-----------------------------------
+# IO4Edge devices
+
+wget https://github.com/ci4rail/io4edge-client-go/releases/download/v1.7.0/io4edge-cli-v1.7.0-linux-arm64.tar.gz && \
+tar -C /usr/local/bin -xvf io4edge-cli-v1.7.0-linux-arm64.tar.gz io4edge-cli && \
+rm io4edge-cli-v1.7.0-linux-arm64.tar.gz
+
 # USB io4edge devices udev rules
 echo 'ACTION=="add", ATTRS{interface}=="TinyUSB Network", PROGRAM="/usr/bin/usb_io4edge_interface_name.sh %k", NAME="%c"' > /etc/udev/rules.d/99-usb-io4edge.rules
 
 cat <<EOF > /usr/bin/usb_io4edge_interface_name.sh 
 #!/bin/sh
 
-USB_PATH=$(readlink /sys/class/net/$1)
+USB_PATH=\$(readlink /sys/class/net/\$1)
 
-USB_PORT=$(echo $USB_PATH | awk -F/ '{print$(NF-3)}')
+USB_PORT=\$(echo \$USB_PATH | awk -F/ '{print\$(NF-3)}')
 
-case $USB_PORT in
+case \$USB_PORT in
 
   1-1.4.1)
     echo "usb_ext1"
@@ -152,3 +160,64 @@ case $USB_PORT in
 esac
 EOF
 chmod +x /usr/bin/usb_io4edge_interface_name.sh
+
+cat <<EOF > /etc/netplan/10-usb-ext.yaml
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    usb_io_ctrl:
+      dhcp4: false
+      addresses: [192.168.200.10/24]
+    usb_ext1:
+      dhcp4: false
+      addresses: [192.168.201.10/24]
+    usb_ext2:
+      dhcp4: false
+      addresses: [192.168.202.10/24]
+    usb_ext3:
+      dhcp4: false
+      addresses: [192.168.203.10/24]
+    usb_ext4:
+      dhcp4: false
+      addresses: [192.168.204.10/24]
+    usb_ext5:
+      dhcp4: false
+      addresses: [192.168.205.10/24]
+    usb_ext6:
+      dhcp4: false
+      addresses: [192.168.206.10/24]
+    usb_ext7:
+      dhcp4: false
+      addresses: [192.168.207.10/24]
+    usb_ext8:
+      dhcp4: false
+      addresses: [192.168.208.10/24]
+EOF
+
+# DHCP server for USB IO4Edge devices
+cat <<EOF > /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
+[main]
+dns=dnsmasq
+EOF
+
+cat <<EOF > /etc/NetworkManager/dnsmasq.d/usb_io4edge.conf
+domain=usb_io_ctrl.lan,192.168.200.0/24,local
+interface=usb_io_ctrl
+dhcp-authoritative
+dhcp-option=1,255.255.255.0
+dhcp-option=3,192.168.200.10
+dhcp-option=6,192.168.200.10
+dhcp-range=tag:usb_io_ctrl,192.168.200.1,192.168.200.1,24h
+
+# TODO: only the present interfaces should be configured. Otherwise dnsmasq will fail to start
+# domain=usb_ext1.lan,192.168.201.0/24,local
+# interface=usb_ext1
+# dhcp-authoritative
+# dhcp-option=1,255.255.255.0
+# dhcp-option=3,192.168.201.10
+# dhcp-option=6,192.168.201.10
+# dhcp-range=tag:usb_ext1,192.168.201.1,192.168.201.1,24h
+
+# TODO: add more usb_extX interfaces
+EOF
