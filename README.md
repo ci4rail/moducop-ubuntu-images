@@ -13,8 +13,8 @@ $ make
 - [x] SIM7906E Modem
 - [x] Wifi
 - [x] GPS
-- [ ] Io4Edge Tools 
-- [ ] Io4Edge Devices (Networkmanager config, dhcpd, udev rules) udev rules ok -> use dnsmasq
+- [x] Io4Edge Tools 
+- [x] Io4Edge Devices (Networkmanager config, dhcpd, udev rules)
 - [ ] TTYNVT and -runner
 - [ ] SocketCAN Io4Edge and -runner
 - [x] Docker with Compose

@@ -32,6 +32,7 @@ apt -y --no-install-recommends install \
     wireless-regdb \
     fuse-overlayfs \
     avahi-daemon avahi-utils \
+    isc-dhcp-server \
 
 
 # The docker installer uses iptables for nat. Unfortunately Debian uses nftables. 
@@ -63,7 +64,7 @@ network:
   ethernets:
     eth0: 
       dhcp4: false
-      addresses: [192.168.24.15/24] 
+      addresses: [192.168.24.174/24] 
       gateway4: 192.168.24.1 
       nameservers:
         addresses: [8.8.8.8,8.8.4.4,192.168.24.1]
@@ -195,29 +196,81 @@ network:
       addresses: [192.168.208.10/24]
 EOF
 
-# DHCP server for USB IO4Edge devices
-cat <<EOF > /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
-[main]
-dns=dnsmasq
+cat <<EOF > /etc/dhcp/dhcpd.conf
+ddns-update-style none;
+
+# option definitions common to all supported networks... (not relevant for this snippet)
+option domain-name "example.org";
+option domain-name-servers ns1.example.org, ns2.example.org;
+
+default-lease-time 600;
+max-lease-time 7200;
+
+subnet 192.168.200.0 netmask 255.255.255.0 {
+    range 192.168.200.1 192.168.200.1;
+}
+
+subnet 192.168.201.0 netmask 255.255.255.0 {
+    range 192.168.201.1 192.168.201.1;
+}
+
+subnet 192.168.202.0 netmask 255.255.255.0 {
+    range 192.168.202.1 192.168.202.1;
+}
+
+subnet 192.168.203.0 netmask 255.255.255.0 {
+    range 192.168.203.1 192.168.203.1;
+}
+
+subnet 192.168.204.0 netmask 255.255.255.0 {
+    range 192.168.204.1 192.168.204.1;
+}
+
+subnet 192.168.205.0 netmask 255.255.255.0 {
+    range 192.168.205.1 192.168.205.1;
+}
+
+subnet 192.168.206.0 netmask 255.255.255.0 {
+    range 192.168.206.1 192.168.206.1;
+}
+
+subnet 192.168.207.0 netmask 255.255.255.0 {
+    range 192.168.207.1 192.168.207.1;
+}
+
+subnet 192.168.208.0 netmask 255.255.255.0 {
+    range 192.168.208.1 192.168.208.1;
+}
+
+# subnet for enp5s0 (eth2)
+subnet 192.168.25.0 netmask 255.255.255.0 {
+    range 192.168.25.1 192.168.25.98;
+}
 EOF
 
-cat <<EOF > /etc/NetworkManager/dnsmasq.d/usb_io4edge.conf
-domain=usb_io_ctrl.lan,192.168.200.0/24,local
-interface=usb_io_ctrl
-dhcp-authoritative
-dhcp-option=1,255.255.255.0
-dhcp-option=3,192.168.200.10
-dhcp-option=6,192.168.200.10
-dhcp-range=tag:usb_io_ctrl,192.168.200.1,192.168.200.1,24h
-
-# TODO: only the present interfaces should be configured. Otherwise dnsmasq will fail to start
-# domain=usb_ext1.lan,192.168.201.0/24,local
-# interface=usb_ext1
-# dhcp-authoritative
-# dhcp-option=1,255.255.255.0
-# dhcp-option=3,192.168.201.10
-# dhcp-option=6,192.168.201.10
-# dhcp-range=tag:usb_ext1,192.168.201.1,192.168.201.1,24h
-
-# TODO: add more usb_extX interfaces
+cat <<EOF > /etc/default/isc-dhcp-server
+INTERFACESv4="usb_io_ctrl usb_ext1 usb_ext2 usb_ext3 usb_ext4 usb_ext5 usb_ext6 usb_ext7 usb_ext8"
 EOF
+
+cat <<EOF > /etc/NetworkManager/dispatcher.d/10-dhcpd-restart
+#!/bin/bash
+#
+# This script restarts the DHDCP daemon whenever a network interface
+# listed in /etc/default/dhcp-server comes up.
+# This is needed to provide USB attached
+# io4edge devices with an IP address whenever they are restarted.
+#
+# Also needed for point-to-point Ethernet connections, that have no link initially.
+#
+
+interface=\$1 status=\$2
+
+echo "10-dhcpd-restart running with \$interface and \$status"
+if [[ "\$2" == "up" ]]; then
+  if [[ \$(grep "\$1" /etc/default/isc-dhcp-server | grep "INTERFACESv4") ]]; then
+    echo "Restarting dhcpd"
+    systemctl restart isc-dhcp-server
+  fi
+fi
+EOF
+chmod +x /etc/NetworkManager/dispatcher.d/10-dhcpd-restart
