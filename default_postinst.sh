@@ -8,11 +8,18 @@ set -e
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 chmod a+r /etc/apt/keyrings/docker.asc
+curl -fsSL https://downloads.mender.io/repos/debian/gpg -o /etc/apt/trusted.gpg.d/mender.asc
+
 # Add the repository to Apt sources:
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
+echo "deb [arch=$(dpkg --print-architecture)] https://downloads.mender.io/repos/debian ubuntu/jammy/stable main" |\
+  tee /etc/apt/sources.list.d/mender.list > /dev/null
+
+# mender-client needs to know the device type
+export DEVICE_TYPE=ubuntu-moducop-cpu01
 
 # install packages
 # logrotate is needed for log rotation
@@ -33,7 +40,14 @@ apt -y --no-install-recommends install \
     fuse-overlayfs \
     avahi-daemon avahi-utils \
     isc-dhcp-server \
+    mender-client4 \
+    mender-connect \
+    mender-configure \
 
+# prevent the Mender client from upgrading when upgrading the rest of the system
+apt-mark hold mender-auth
+apt-mark hold mender-update
+apt-mark hold mender-client
 
 # The docker installer uses iptables for nat. Unfortunately Debian uses nftables. 
 # Setup Debian to use the legacy iptables.
@@ -274,3 +288,17 @@ if [[ "\$2" == "up" ]]; then
 fi
 EOF
 chmod +x /etc/NetworkManager/dispatcher.d/10-dhcpd-restart
+
+#-----------------------------------
+# Mender
+cat <<EOF >/etc/mender/mender-connect.conf
+{
+    "ShellCommand": "/bin/bash",
+    "User": "root",
+    "Sessions": {
+        "ExpireAfterIdle": 300,
+        "MaxPerUser": 5,
+        "StopExpired": true
+    }
+}
+EOF
