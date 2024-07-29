@@ -12,5 +12,9 @@ network:
   renderer: NetworkManager
   ethernets:
     eth0: 
-      dhcp4: yes
+      dhcp4: false
+      addresses: [192.168.24.174/24] 
+      gateway4: 192.168.24.1 
+      nameservers:
+        addresses: [8.8.8.8,8.8.4.4,192.168.24.1]
 EOF

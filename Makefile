@@ -5,7 +5,7 @@
 # .e.g. make ISO_URL=... VARIANT=...
 
 # The ubuntu ISO image to use
-ISO_URL ?= https://cdimage.ubuntu.com/releases/22.04/release/ubuntu-22.04.3-live-server-arm64.iso
+ISO_URL ?= https://cdimage.ubuntu.com/releases/22.04/release/ubuntu-22.04.4-live-server-arm64.iso
 
 # Location of the squashed rootfs in the ISO image
 SQUASHED_FS ?= casper/ubuntu-server-minimal.squashfs
@@ -16,7 +16,7 @@ SQUASHED_FS ?= casper/ubuntu-server-minimal.squashfs
 VARIANT ?= default
 
 # The project and package version of the kernel packages
-KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-edgefarm-devtools-image/install
+KERNEL_PACKAGES_PATH ?= /yocto-images/cpu01-devtools-image/install
 #DTB=imx8mm-verdin-wifi-dahlia-moducop-cpu01.dtb
 DTB=imx8mm-verdin-wifi-moducop-cpu01.dtb
 
@@ -51,7 +51,7 @@ ${BUILD_DIR}/squashfs: ${BUILD_DIR}/base.iso
 # extract the rootfs from the squashfs
 ${ROOTFS_DIR}: ${BUILD_DIR}/squashfs
 	@echo "=== Unsquashing Rootfs ==="
-	@rm -rf ${ROOTFS_DIR} ${BUILD_DIR}/.postinst.done
+	@rm -rf ${ROOTFS_DIR} ${BUILD_DIR}/.postinst.done 
 	unsquashfs -d ${ROOTFS_DIR} ${BUILD_DIR}/squashfs
 
 # prepare for qemu chroot
@@ -64,6 +64,7 @@ ${BUILD_DIR}/.postinst.done: ${VARIANT}_postinst.sh
 	@echo "nameserver 8.8.8.8" > ${ROOTFS_DIR}/etc/resolv.conf
 	@echo "=== Running Post Install Script ==="
 	@cp ${VARIANT}_postinst.sh ${ROOTFS_DIR}/root/postinst.sh && chmod +x ${ROOTFS_DIR}/root/postinst.sh
+	@cp -r postinst-includes/ ${ROOTFS_DIR}/root/
 	@chroot ${ROOTFS_DIR} /root/postinst.sh
 	@mv ${ROOTFS_DIR}/etc/resolv.conf.bak ${ROOTFS_DIR}/etc/resolv.conf
 	@touch $@
@@ -84,7 +85,7 @@ ${ROOTFS_DIR}/etc/bsp.version:
 
 # create the rootfs tarball
 ${BUILD_DIR}/rootfs.tgz: ${ROOTFS_DIR}/boot/Image ${ROOTFS_DIR}/usr/bin/qemu-aarch64-static ${ROOTFS_DIR}/etc/bsp.version ${BUILD_DIR}/.postinst.done
-	@rm -f ${ROOTFS_DIR}/usr/bin/qemu-aarch64-static ${ROOTFS_DIR}/root/postinst.sh
+	@rm -rf ${ROOTFS_DIR}/usr/bin/qemu-aarch64-static ${ROOTFS_DIR}/root/postinst.sh ${ROOTFS_DIR}/root/postinst-includes
 	@echo "=== Creating Rootfs Tarball ==="
 	tar -C ${ROOTFS_DIR} -czf ${BUILD_DIR}/rootfs.tgz .
 
