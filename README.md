@@ -1,3 +1,12 @@
+# WORK-IN-PROGRESS
+
+This repo contains an early and unfinished attempt to run Ubuntu on ModuCop.
+Use at your own risk. Ci4Rail will not provide support.
+
+## Usage
+
+
+
 Use a docker container to build the rootfs.
 
 $ ./startdev.sh
